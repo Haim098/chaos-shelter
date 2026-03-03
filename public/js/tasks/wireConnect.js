@@ -121,8 +121,12 @@
   }
 
   function getEventPos(e) {
+    // touchmove/touchstart use e.touches; touchend uses e.changedTouches
     if (e.touches && e.touches.length > 0) {
       return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
     }
     return { x: e.clientX, y: e.clientY };
   }
@@ -238,6 +242,8 @@
   function findTargetAt(x, y) {
     var targets = container.querySelectorAll('.wire-target');
     for (var i = 0; i < targets.length; i++) {
+      // Skip already-connected targets
+      if (targets[i].classList.contains('wire-done')) continue;
       var r = targets[i].getBoundingClientRect();
       // Generous hit area for touch
       var pad = 15;

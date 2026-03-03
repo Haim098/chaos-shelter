@@ -33,8 +33,21 @@
     var el = DOM.id(id);
     if (!el) return;
     var clamped = Math.max(0, Math.min(100, value));
+    var oldWidth = el.style.width;
     el.style.width = clamped + '%';
     DOM.toggleClass(el, 'danger', clamped <= DANGER_THRESHOLD);
+
+    // Pulse animation on meter change
+    if (oldWidth && oldWidth !== clamped + '%') {
+      var track = el.parentElement;
+      if (track) {
+        track.classList.remove('meter-changed');
+        // Force reflow to restart animation
+        void track.offsetWidth;
+        track.classList.add('meter-changed');
+        setTimeout(function () { track.classList.remove('meter-changed'); }, 600);
+      }
+    }
   }
 
   /** Get display-friendly percentage */

@@ -16,6 +16,14 @@
 </head>
 <body>
 
+  <!-- ========== LOADING/CONNECTING SCREEN ========== -->
+  <div id="screen-loading" class="loading-screen">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">מתחבר למקלט...</p>
+    </div>
+  </div>
+
   <!-- ========== LOBBY SCREEN ========== -->
   <div id="screen-lobby" class="screen active">
     <div class="screen-bg" style="background-image: url('/assets/bg-shelter-lobby.png')"></div>
@@ -59,6 +67,10 @@
   <div id="screen-crewGame" class="screen">
     <div class="screen-bg" style="background-image: url('/assets/bg-control-panel-crew.png')"></div>
     <div class="screen-content game-content">
+      <div class="game-top-bar">
+        <div class="round-timer" id="crew-round-timer">3:00</div>
+        <div class="alive-count" id="crew-alive-count"></div>
+      </div>
       <div class="meters-bar">
         <div class="meter" id="meter-survival">
           <img src="/assets/icon-meter-survival.png" alt="הישרדות" class="meter-icon">
@@ -96,6 +108,10 @@
   <div id="screen-saboteurGame" class="screen">
     <div class="screen-bg" style="background-image: url('/assets/bg-secret-bakari-stash.png')"></div>
     <div class="screen-content game-content">
+      <div class="game-top-bar">
+        <div class="round-timer" id="sab-round-timer">3:00</div>
+        <div class="alive-count" id="sab-alive-count"></div>
+      </div>
       <div class="meters-bar">
         <div class="meter">
           <img src="/assets/icon-meter-survival.png" alt="הישרדות" class="meter-icon">
@@ -123,15 +139,18 @@
       <div class="sabotage-buttons">
         <button class="btn btn-sabotage" data-sabotage="lights">
           <img src="/assets/btn-sabotage-action.png" alt="חבלה" class="sabotage-icon">
-          <span>כיבוי אורות</span>
+          <span class="sab-label">כיבוי אורות</span>
+          <span class="sab-cooldown-text hidden"></span>
         </button>
         <button class="btn btn-sabotage" data-sabotage="alarm">
           <img src="/assets/btn-sabotage-action.png" alt="חבלה" class="sabotage-icon">
-          <span>אזעקת שווא</span>
+          <span class="sab-label">אזעקת שווא</span>
+          <span class="sab-cooldown-text hidden"></span>
         </button>
         <button class="btn btn-sabotage" data-sabotage="steal">
           <img src="/assets/btn-sabotage-action.png" alt="חבלה" class="sabotage-icon">
-          <span>גניבת בקרי</span>
+          <span class="sab-label">גניבת בקרי</span>
+          <span class="sab-cooldown-text hidden"></span>
         </button>
       </div>
 

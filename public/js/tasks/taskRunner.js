@@ -39,11 +39,45 @@
     registry[type] = handlers;
   }
 
+  // ── Normalize server task data to client format ─────────────
+  // Server sends: { id, type, label, duration, fake, circleCount, requiredTaps, question, answers, correct, wires }
+  // Client expects: { taskId, type, timeLimit, isFake, params: { count, taps, questionIndex, correctIndex, ... } }
+  function normalizeTask(raw) {
+    var data = {
+      taskId:    raw.taskId    || raw.id,
+      type:      raw.type,
+      timeLimit: raw.timeLimit || raw.duration,
+      isFake:    raw.isFake    || raw.fake || false,
+      params:    raw.params    || {},
+    };
+
+    // Map type-specific server fields into params
+    switch (raw.type) {
+      case 'tapCircles':
+        if (raw.circleCount !== undefined) data.params.count = raw.circleCount;
+        break;
+      case 'tapToWake':
+        if (raw.requiredTaps !== undefined) data.params.taps = raw.requiredTaps;
+        break;
+      case 'chooseAnswer':
+        if (raw.question !== undefined)  data.params.question    = raw.question;
+        if (raw.answers  !== undefined)  data.params.answers     = raw.answers;
+        if (raw.correct  !== undefined)  data.params.correctIndex = raw.correct;
+        break;
+      case 'wireConnect':
+        if (raw.wires !== undefined) data.params.wires = raw.wires;
+        break;
+    }
+
+    return data;
+  }
+
   // ── Show task overlay ────────────────────────────────────────
-  function showTask(taskData) {
+  function showTask(rawData) {
     if (!overlay) cacheDom();
     if (activeTask) hideTask();
 
+    var taskData = normalizeTask(rawData);
     activeTask = taskData;
 
     // Build header

@@ -28,6 +28,11 @@
     socket.on('connect', function () {
       connected = true;
       console.log('[Socket] Connected:', socket.id);
+
+      // Hide loading screen on connect
+      var loadingEl = document.getElementById('screen-loading');
+      if (loadingEl) loadingEl.classList.add('hidden');
+
       Socket._fireInternal('connected', { id: socket.id });
     });
 

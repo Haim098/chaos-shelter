@@ -100,3 +100,20 @@
   color: var(--color-text-muted);
   font-weight: 500;
 }
+
+/* Host crown in player list */
+.player-item-host-crown {
+  font-size: 1.1rem;
+  margin-right: 4px;
+}
+
+/* Start button needs-more-players state */
+.btn-start.needs-players {
+  background: var(--color-surface-light);
+  box-shadow: none;
+  animation: none;
+  opacity: 0.7;
+  pointer-events: none;
+  font-size: 0.95rem;
+  padding: 14px 28px;
+}

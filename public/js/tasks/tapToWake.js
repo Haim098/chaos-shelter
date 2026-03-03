@@ -65,13 +65,18 @@
 
     container.appendChild(area);
 
-    // Bind tap events on the daniel icon
-    var onTap = function (e) {
+    // Bind tap events on the daniel icon (with guard for double-fire)
+    var touchFired = false;
+    danielIcon.addEventListener('touchstart', function (e) {
       e.preventDefault();
+      touchFired = true;
       handleTap();
-    };
-    danielIcon.addEventListener('touchstart', onTap, { passive: false });
-    danielIcon.addEventListener('mousedown', onTap);
+    }, { passive: false });
+    danielIcon.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      if (touchFired) { touchFired = false; return; }
+      handleTap();
+    });
   }
 
   function handleTap() {

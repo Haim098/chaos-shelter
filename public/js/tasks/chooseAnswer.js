@@ -7,6 +7,7 @@
 
   var container = null;
   var onDone = null;
+  var answered = false;
 
   // ── Question bank (Hebrew shelter humor) ────────────────────
   var QUESTIONS = [
@@ -28,17 +29,23 @@
   function init(bodyEl, params, callback) {
     container = bodyEl;
     onDone = callback;
+    answered = false;
 
-    // Pick question from params or random
+    // Pick question: prefer server-provided question/answers, fallback to local bank
     var qData;
-    if (params && params.questionIndex !== undefined && params.questionIndex < QUESTIONS.length) {
+    var correctIdx;
+
+    if (params && params.question && params.answers) {
+      // Server sent full question data
+      qData = { q: params.question, answers: params.answers, correct: params.correctIndex !== undefined ? params.correctIndex : 0 };
+      correctIdx = qData.correct;
+    } else if (params && params.questionIndex !== undefined && params.questionIndex < QUESTIONS.length) {
       qData = QUESTIONS[params.questionIndex];
+      correctIdx = (params && params.correctIndex !== undefined) ? params.correctIndex : qData.correct;
     } else {
       qData = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
+      correctIdx = (params && params.correctIndex !== undefined) ? params.correctIndex : qData.correct;
     }
-
-    // Allow server to override correct answer index
-    var correctIdx = (params && params.correctIndex !== undefined) ? params.correctIndex : qData.correct;
 
     // Build question UI
     var questionEl = document.createElement('div');
@@ -70,7 +77,8 @@
   }
 
   function onAnswer(selectedIdx, correctIdx, btnEl, answersContainer) {
-    if (!onDone) return;
+    if (!onDone || answered) return;
+    answered = true;
 
     // Disable all buttons
     var btns = answersContainer.querySelectorAll('.choose-btn');
@@ -97,6 +105,7 @@
   function cleanup() {
     container = null;
     onDone = null;
+    answered = false;
   }
 
   // Register with TaskRunner

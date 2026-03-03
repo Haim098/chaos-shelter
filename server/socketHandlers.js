@@ -1,6 +1,6 @@
 // ── Socket.IO Event Handlers ────────────────────────────────────
 const {
-  PHASE, MIN_PLAYERS, MAX_PLAYERS,
+  PHASE, ROLE, MIN_PLAYERS, MAX_PLAYERS,
   ROLE_REVEAL_DURATION, ROUND_DURATION,
   VOTE_DURATION, DECAY_INTERVAL, RESULTS_DURATION,
 } = require('./constants');
@@ -29,6 +29,45 @@ function registerHandlers(io) {
       if (!name) {
         if (ack) ack({ ok: false, error: 'שם לא תקין' });
         return;
+      }
+
+      // Reconnection support: check if a disconnected player with same name exists
+      const existingEntry = Object.entries(state.players).find(
+        ([, p]) => p.name.toLowerCase() === name.toLowerCase()
+      );
+
+      if (existingEntry && state.phase !== PHASE.LOBBY) {
+        const [oldId, existingPlayer] = existingEntry;
+
+        if (!existingPlayer.connected) {
+          // Reconnecting player: migrate to new socket id
+          existingPlayer.id = socket.id;
+          existingPlayer.connected = true;
+          state.players[socket.id] = existingPlayer;
+          delete state.players[oldId];
+
+          // Reassign host if needed
+          if (state.hostId === oldId) {
+            state.hostId = socket.id;
+          }
+
+          if (ack) ack({ ok: true, playerId: socket.id, reconnected: true, phase: state.phase, role: existingPlayer.role });
+
+          // Send current game state to reconnected player
+          if (state.phase === PHASE.PLAYING || state.phase === PHASE.VOTING) {
+            socket.emit('game:playing', {
+              meters:   metersSnapshot(),
+              players:  publicPlayerList(),
+              duration: ROUND_DURATION,
+              startedAt: state.roundStartedAt || Date.now(),
+              aliveCount: getAlivePlayers().length,
+              totalCount: Object.keys(state.players).length,
+            });
+          }
+
+          console.log(`[reconnect] ${name} (${oldId} -> ${socket.id})`);
+          return;
+        }
       }
 
       if (state.phase !== PHASE.LOBBY) {
@@ -146,8 +185,8 @@ function registerHandlers(io) {
         return;
       }
 
-      const gameEnded = executeSabotage(socket.id, actionKey, io);
-      if (ack) ack({ ok: !gameEnded, performed: true });
+      const result = executeSabotage(socket.id, actionKey, io);
+      if (ack) ack({ ok: result.performed, performed: result.performed });
     });
 
     // ── vote:call ───────────────────────────────────────────────
@@ -163,8 +202,13 @@ function registerHandlers(io) {
         return;
       }
 
-      // Start voting phase
+      // Start voting phase - stop all gameplay timers
       stopTaskLoop();
+      clearTimeout(state.roundTimer);
+      clearInterval(state.decayTimer);
+      state.roundTimer = null;
+      state.decayTimer = null;
+
       state.phase = PHASE.VOTING;
       state.vote = {
         callerId:  socket.id,
@@ -271,9 +315,23 @@ function registerHandlers(io) {
       if (state.phase === PHASE.LOBBY) {
         delete state.players[socket.id];
       } else {
-        // During game, mark as disconnected but keep in game
+        // During game, mark as disconnected but keep alive for reconnection
         player.connected = false;
-        player.alive = false;
+
+        // If voting, remove their vote and check if all remaining alive players voted
+        if (state.phase === PHASE.VOTING) {
+          delete state.vote.votes[socket.id];
+          const alivePlayers = getAlivePlayers();
+          const voteCount = Object.keys(state.vote.votes).length;
+          io.emit('vote:progress', {
+            voted: voteCount,
+            total: alivePlayers.length,
+          });
+          if (alivePlayers.length > 0 && voteCount >= alivePlayers.length) {
+            clearTimeout(state.vote.timer);
+            resolveVote(io);
+          }
+        }
       }
 
       // Reassign host if needed
@@ -295,7 +353,8 @@ function registerHandlers(io) {
           hostId:  state.hostId,
           count:   Object.keys(state.players).length,
         });
-      } else {
+      } else if (state.phase !== PHASE.VOTING) {
+        // Don't double-check during voting; resolveVote handles it
         io.emit('meters:update', metersSnapshot());
         checkWinConditions(io);
       }
@@ -306,11 +365,15 @@ function registerHandlers(io) {
 // ── Start Playing Phase ─────────────────────────────────────────
 function startPlayingPhase(io) {
   state.phase = PHASE.PLAYING;
+  state.roundStartedAt = Date.now();
 
   io.emit('game:playing', {
     meters:   metersSnapshot(),
     players:  publicPlayerList(),
     duration: ROUND_DURATION,
+    startedAt: state.roundStartedAt,
+    aliveCount: getAlivePlayers().length,
+    totalCount: Object.keys(state.players).length,
   });
 
   // Start task assignment loop
@@ -340,13 +403,11 @@ function resolveVote(io) {
 
   if (!gameEnded) {
     // Resume playing after a short delay
+    // Keep phase as VOTING until startPlayingPhase transitions it
     setTimeout(() => {
-      if (state.phase === PHASE.VOTING || state.phase === PHASE.RESULTS) return;
+      if (state.phase !== PHASE.VOTING) return;
       startPlayingPhase(io);
     }, 3000);
-
-    // Switch back to playing
-    state.phase = PHASE.PLAYING;
   }
 }
 

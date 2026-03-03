@@ -14,8 +14,14 @@
 
   var SaboteurGame = {};
 
-  var COOLDOWN_MS = 15000;
+  // Per-action cooldown durations (should match server constants)
+  var COOLDOWN_MAP = {
+    lights: 20000,
+    alarm:  25000,
+    steal:  30000
+  };
   var cooldowns = {};
+  var cooldownTimers = {};
 
   SaboteurGame.init = function () {
     // Call vote button
@@ -56,10 +62,34 @@
     cooldowns[action] = true;
     btn.classList.add('on-cooldown');
 
-    setTimeout(function () {
-      cooldowns[action] = false;
-      btn.classList.remove('on-cooldown');
-    }, COOLDOWN_MS);
+    // Find the cooldown text element
+    var cdText = btn.querySelector('.sab-cooldown-text');
+    var cdMs = COOLDOWN_MAP[action] || 15000;
+    var remaining = Math.ceil(cdMs / 1000);
+
+    function updateCdText() {
+      if (cdText) {
+        cdText.classList.remove('hidden');
+        cdText.textContent = remaining + '\u05E9';
+      }
+      remaining--;
+      if (remaining < 0) {
+        clearInterval(cooldownTimers[action]);
+        delete cooldownTimers[action];
+        cooldowns[action] = false;
+        btn.classList.remove('on-cooldown');
+        if (cdText) {
+          cdText.classList.add('hidden');
+          cdText.textContent = '';
+        }
+      }
+    }
+
+    // Clear any existing timer for this action
+    if (cooldownTimers[action]) clearInterval(cooldownTimers[action]);
+
+    updateCdText();
+    cooldownTimers[action] = setInterval(updateCdText, 1000);
   }
 
   /**
@@ -67,10 +97,19 @@
    * @param {object} data - { meters, players, duration }
    */
   SaboteurGame.onStart = function (data) {
-    // Reset cooldowns
+    // Reset cooldowns and timers
+    Object.keys(cooldownTimers).forEach(function (key) {
+      clearInterval(cooldownTimers[key]);
+    });
+    cooldownTimers = {};
     cooldowns = {};
     DOM.qsa('.btn-sabotage').forEach(function (btn) {
       btn.classList.remove('on-cooldown');
+      var cdText = btn.querySelector('.sab-cooldown-text');
+      if (cdText) {
+        cdText.classList.add('hidden');
+        cdText.textContent = '';
+      }
     });
 
     // Reset task area

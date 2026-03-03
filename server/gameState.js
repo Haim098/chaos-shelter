@@ -51,6 +51,7 @@ function resetGame() {
   clearTimeout(state.roundTimer);
   clearInterval(state.decayTimer);
   clearInterval(state.taskTimer);
+  clearTimeout(state.vote.timer);
 
   state.phase     = PHASE.LOBBY;
   state.survival  = SURVIVAL_START;
@@ -70,17 +71,19 @@ function resetGame() {
 
   // Reset player roles but keep them in lobby
   for (const p of Object.values(state.players)) {
-    p.role  = null;
-    p.alive = true;
+    p.role      = null;
+    p.alive     = true;
+    p.connected = true;
   }
 }
 
 // ── Snapshot: safe object to send to clients ────────────────────
 function publicPlayerList() {
   return Object.values(state.players).map(p => ({
-    id:    p.id,
-    name:  p.name,
-    alive: p.alive,
+    id:     p.id,
+    name:   p.name,
+    alive:  p.alive,
+    isHost: p.id === state.hostId,
   }));
 }
 

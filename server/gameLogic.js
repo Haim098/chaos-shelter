@@ -76,7 +76,7 @@ function canSabotage(playerId, actionKey) {
 }
 
 function executeSabotage(playerId, actionKey, io) {
-  if (!canSabotage(playerId, actionKey)) return false;
+  if (!canSabotage(playerId, actionKey)) return { performed: false };
 
   const action = SABOTAGE[actionKey];
   state.cooldowns[playerId][actionKey] = Date.now();
@@ -95,7 +95,8 @@ function executeSabotage(playerId, actionKey, io) {
   io.emit('meters:update', metersSnapshot());
 
   // Check win condition
-  return checkWinConditions(io);
+  const gameEnded = checkWinConditions(io);
+  return { performed: true, gameEnded };
 }
 
 // ── Decay (after round timer expires) ───────────────────────────
@@ -113,22 +114,34 @@ function tallyVotes(io) {
   const tally = {};  // targetId -> count
   let totalVotes = 0;
 
-  for (const targetId of Object.values(votes)) {
+  // Only count votes from alive players
+  for (const [voterId, targetId] of Object.entries(votes)) {
+    const voter = state.players[voterId];
+    if (!voter || !voter.alive) continue;
     if (!tally[targetId]) tally[targetId] = 0;
     tally[targetId]++;
     totalVotes++;
   }
 
-  // Find who got the most votes
+  // Find who got the most votes (ties result in no ejection)
   let maxVotes = 0;
   let ejectedId = null;
+  let isTied = false;
 
   for (const [targetId, count] of Object.entries(tally)) {
     if (targetId === 'skip') continue;
     if (count > maxVotes) {
       maxVotes = count;
       ejectedId = targetId;
+      isTied = false;
+    } else if (count === maxVotes && count > 0) {
+      isTied = true;
     }
+  }
+
+  // If tied, no one is ejected
+  if (isTied) {
+    ejectedId = null;
   }
 
   // Need >50% of alive players to eject
@@ -162,40 +175,34 @@ function tallyVotes(io) {
 function checkWinConditions(io) {
   if (state.phase !== PHASE.PLAYING && state.phase !== PHASE.VOTING) return false;
 
-  let winner = null;
-  let reason = '';
+  const aliveSaboteurs = Object.values(state.players)
+    .filter(p => p.role === ROLE.SABOTEUR && p.alive);
+  const alivePlayers = Object.values(state.players).filter(p => p.alive);
+  const aliveCrew = alivePlayers.filter(p => p.role === ROLE.CREW);
+
+  // Priority order: check definitive wins first, with early return
 
   // Crew wins: survival reached 100%
   if (state.survival >= SURVIVAL_WIN) {
-    winner = 'crew';
-    reason = 'meter_full';
+    endGame('crew', 'meter_full', io);
+    return true;
+  }
+
+  // Crew wins: all saboteurs ejected/disconnected
+  if (aliveSaboteurs.length === 0) {
+    endGame('crew', 'saboteurs_ejected', io);
+    return true;
   }
 
   // Saboteur wins: bakari reached 0%
   if (state.bakari <= BAKARI_LOSE) {
-    winner = 'saboteur';
-    reason = 'bakari_empty';
+    endGame('saboteur', 'bakari_empty', io);
+    return true;
   }
 
-  // Crew wins: all saboteurs ejected
-  const aliveSaboteurs = Object.values(state.players)
-    .filter(p => p.role === ROLE.SABOTEUR && p.alive);
-
-  if (aliveSaboteurs.length === 0 && state.phase !== PHASE.LOBBY) {
-    winner = 'crew';
-    reason = 'saboteurs_ejected';
-  }
-
-  // Saboteur wins: saboteurs are majority of alive players
-  const alivePlayers = Object.values(state.players).filter(p => p.alive);
-  const aliveCrew = alivePlayers.filter(p => p.role === ROLE.CREW);
-  if (aliveSaboteurs.length >= aliveCrew.length && aliveSaboteurs.length > 0) {
-    winner = 'saboteur';
-    reason = 'saboteur_majority';
-  }
-
-  if (winner) {
-    endGame(winner, reason, io);
+  // Saboteur wins: saboteurs outnumber or equal crew among alive players
+  if (aliveSaboteurs.length >= aliveCrew.length) {
+    endGame('saboteur', 'saboteur_majority', io);
     return true;
   }
 
@@ -207,9 +214,11 @@ function endGame(winner, reason, io) {
   clearTimeout(state.roundTimer);
   clearInterval(state.decayTimer);
   clearInterval(state.taskTimer);
+  clearTimeout(state.vote.timer);
   state.roundTimer = null;
   state.decayTimer = null;
   state.taskTimer  = null;
+  state.vote.timer = null;
 
   state.phase = PHASE.RESULTS;
 

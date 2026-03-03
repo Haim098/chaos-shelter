@@ -38,11 +38,12 @@
     Toast.warning(data.callerName + ' קרא להצבעה!');
     Audio.alarm();
 
-    // Render vote cards
+    // Render vote cards - cast vote immediately on selection
     PlayerList.renderVoteCards(data.players || [], window.App.state.myId, function (targetId) {
       if (hasVoted) return;
       selectedTarget = targetId;
       Audio.click();
+      _castVote(targetId);
     });
 
     // Enable skip button
@@ -72,28 +73,34 @@
 
   /**
    * Handle vote:tally results
-   * @param {object} data - { votes, ejected, ejectedName, wasRole }
+   * Server sends: { tally, ejected (name string), ejectedId, wasRole, noEjection }
    */
   Voting.onVoteTally = function (data) {
     Timer.stop('voting');
 
-    // Show vote counts on cards
-    if (data.votes) {
-      PlayerList.showVoteResults(data.votes);
+    // Show vote counts on cards (server sends 'tally', not 'votes')
+    var voteCounts = data.tally || data.votes;
+    if (voteCounts) {
+      PlayerList.showVoteResults(voteCounts);
     }
 
     // After a short delay, show ejection result
     setTimeout(function () {
-      if (data.ejected) {
-        // Mark ejected card
-        var ejectedCard = DOM.qs('.vote-card[data-player-id="' + data.ejected + '"]');
-        if (ejectedCard) {
-          ejectedCard.classList.add('ejected');
+      if (data.ejectedId || (data.ejected && !data.noEjection)) {
+        // Mark ejected card by ID
+        var ejectedId = data.ejectedId;
+        if (ejectedId) {
+          var ejectedCard = DOM.qs('.vote-card[data-player-id="' + ejectedId + '"]');
+          if (ejectedCard) {
+            ejectedCard.classList.add('ejected');
+          }
         }
 
+        // data.ejected is the name string from server
+        var ejectedName = data.ejected || data.ejectedName || 'שחקן';
         var roleText = data.wasRole === 'saboteur' ? 'מחבל!' : 'צוות...';
         Toast.show(
-          (data.ejectedName || 'שחקן') + ' גורש מהמקלט! הוא היה: ' + roleText,
+          ejectedName + ' גורש מהמקלט! הוא היה: ' + roleText,
           data.wasRole === 'saboteur' ? 'success' : 'error',
           4000
         );

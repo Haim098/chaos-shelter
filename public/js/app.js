@@ -26,7 +26,11 @@
     hostId: null,
     players: [],
     phase: 'lobby',
-    currentTask: null
+    currentTask: null,
+    roundStartedAt: null,
+    roundDuration: 180000,
+    aliveCount: 0,
+    totalCount: 0
   };
 
   // ── Screen navigation ──────────────────────────────────────────
@@ -62,6 +66,26 @@
     Socket.onStatus('connected', function (data) {
       App.state.myId = data.id;
       App.socket = Socket.getSocket();
+
+      // Reconnection: if we have a saved name, try to rejoin
+      var savedName = localStorage.getItem('chaos-shelter-name');
+      if (savedName && App.state.phase !== 'lobby') {
+        // We were in-game and reconnected
+        Socket.emit('player:join', { name: savedName }, function (response) {
+          if (response && response.ok) {
+            App.state.myId = response.playerId;
+            App.state.myName = savedName;
+            if (response.reconnected && response.role) {
+              App.state.myRole = response.role;
+            }
+            Toast.success('התחברת מחדש!');
+          }
+        });
+      } else if (savedName && !App.state.myName) {
+        // Pre-fill name input for convenience
+        var nameInput = DOM.id('player-name-input');
+        if (nameInput && !nameInput.value) nameInput.value = savedName;
+      }
     });
 
     Socket.onStatus('disconnected', function () {
@@ -83,6 +107,17 @@
       App.state.players = data.players || [];
       App.state.hostId = data.hostId;
 
+      // If we receive lobby:update while NOT in lobby (e.g. after game:restart),
+      // reset state and navigate back to lobby for all players
+      if (App.state.phase !== 'lobby') {
+        App.state.myRole = null;
+        App.state.currentTask = null;
+        Timer.stopAll();
+        if (_roundTimerInterval) { clearInterval(_roundTimerInterval); _roundTimerInterval = null; }
+        if (App.TaskRunner) App.TaskRunner.hideTask();
+        App.showScreen('lobby');
+      }
+
       if (App.Screens.Lobby) {
         App.Screens.Lobby.onLobbyUpdate(data);
       }
@@ -103,6 +138,12 @@
       if (data.meters) Meters.update(data.meters);
       if (data.players) App.state.players = data.players;
 
+      // Track round timer info
+      App.state.roundStartedAt = data.startedAt || Date.now();
+      App.state.roundDuration = data.duration || 180000;
+      if (data.aliveCount) App.state.aliveCount = data.aliveCount;
+      if (data.totalCount) App.state.totalCount = data.totalCount;
+
       if (App.state.myRole === 'saboteur') {
         App.showScreen('saboteurGame');
         if (App.Screens.SaboteurGame) App.Screens.SaboteurGame.onStart(data);
@@ -110,6 +151,12 @@
         App.showScreen('crewGame');
         if (App.Screens.CrewGame) App.Screens.CrewGame.onStart(data);
       }
+
+      // Start the round timer display
+      _startRoundTimer(data);
+
+      // Update alive count display
+      _updateAliveCount(data);
     });
 
     // ── task:assign ───────────────────────────────────────────
@@ -131,8 +178,9 @@
 
     // ── vote:started ──────────────────────────────────────────
     Socket.on('vote:started', function (data) {
-      // Close any open task overlay
+      // Close any open task overlay and stop round timer
       if (App.TaskRunner) App.TaskRunner.hideTask();
+      if (_roundTimerInterval) { clearInterval(_roundTimerInterval); _roundTimerInterval = null; }
 
       App.showScreen('voting');
       if (App.Screens.Voting) {
@@ -157,6 +205,7 @@
     // ── game:over ─────────────────────────────────────────────
     Socket.on('game:over', function (data) {
       Timer.stopAll();
+      if (_roundTimerInterval) { clearInterval(_roundTimerInterval); _roundTimerInterval = null; }
       if (App.TaskRunner) App.TaskRunner.hideTask();
 
       App.showScreen('results');
@@ -175,12 +224,18 @@
     Audio.sabotage();
     Toast.warning('חבלה התרחשה!');
 
+    // Vibrate on sabotage (if supported)
+    if (navigator.vibrate) {
+      navigator.vibrate([100, 50, 200]);
+    }
+
     effectEl.className = 'sabotage-effect';
     overlay.classList.remove('hidden');
 
     var duration = 3000;
 
-    switch (data.type) {
+    var sabType = data.type || data.actionKey;
+    switch (sabType) {
       case 'lights':
         effectEl.classList.add('lights-out');
         duration = 3500;
@@ -203,6 +258,87 @@
       effectEl.textContent = '';
     }, duration);
   }
+
+  // ── Round Timer Display ───────────────────────────────────────
+  var _roundTimerInterval = null;
+
+  function _startRoundTimer(data) {
+    if (_roundTimerInterval) clearInterval(_roundTimerInterval);
+
+    var duration = data.duration || 180000;
+    var startedAt = data.startedAt || Date.now();
+
+    function updateDisplay() {
+      var elapsed = Date.now() - startedAt;
+      var remaining = Math.max(0, duration - elapsed);
+      var totalSec = Math.ceil(remaining / 1000);
+      var min = Math.floor(totalSec / 60);
+      var sec = totalSec % 60;
+      var display = min + ':' + (sec < 10 ? '0' : '') + sec;
+
+      var crewTimer = DOM.id('crew-round-timer');
+      var sabTimer = DOM.id('sab-round-timer');
+      if (crewTimer) {
+        crewTimer.textContent = display;
+        DOM.toggleClass(crewTimer, 'urgent', totalSec <= 30);
+      }
+      if (sabTimer) {
+        sabTimer.textContent = display;
+        DOM.toggleClass(sabTimer, 'urgent', totalSec <= 30);
+      }
+
+      if (remaining <= 0) {
+        clearInterval(_roundTimerInterval);
+        _roundTimerInterval = null;
+      }
+    }
+
+    updateDisplay();
+    _roundTimerInterval = setInterval(updateDisplay, 1000);
+  }
+
+  function _updateAliveCount(data) {
+    var alive = data.aliveCount || 0;
+    var total = data.totalCount || 0;
+
+    // Fallback: count from players array
+    if (!alive && data.players) {
+      total = data.players.length;
+      alive = 0;
+      data.players.forEach(function (p) { if (p.alive) alive++; });
+    }
+
+    var text = alive + '/' + total + ' בחיים';
+    var crewCount = DOM.id('crew-alive-count');
+    var sabCount = DOM.id('sab-alive-count');
+    if (crewCount) crewCount.textContent = text;
+    if (sabCount) sabCount.textContent = text;
+  }
+
+  // ── Confetti Effect (crew victory) ──────────────────────────────
+  App.showConfetti = function () {
+    var container = document.createElement('div');
+    container.className = 'confetti-container';
+    document.body.appendChild(container);
+
+    var colors = ['#4caf50', '#81c784', '#ffeb3b', '#ff9800', '#2196f3', '#e91e63'];
+    for (var i = 0; i < 50; i++) {
+      var piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + '%';
+      piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+      piece.style.animationDelay = (Math.random() * 1.5) + 's';
+      piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+      piece.style.width = (6 + Math.random() * 8) + 'px';
+      piece.style.height = (6 + Math.random() * 8) + 'px';
+      container.appendChild(piece);
+    }
+
+    setTimeout(function () {
+      if (container.parentNode) container.parentNode.removeChild(container);
+    }, 5000);
+  };
 
   // ── Boot ───────────────────────────────────────────────────────
   if (document.readyState === 'loading') {

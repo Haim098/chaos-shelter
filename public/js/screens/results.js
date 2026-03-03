@@ -48,7 +48,7 @@
 
   /**
    * Show results screen
-   * @param {object} data - { winner, roles, stats }
+   * Server sends: { winner, reason, players: { id: {name, role, alive} }, meters, stats: { playerId: count } }
    */
   Results.show = function (data) {
     var winner = data.winner; // 'crew' or 'saboteur'
@@ -76,28 +76,66 @@
         : 'המחבל הצליח להרוס את המקלט!';
     }
 
-    // Roles reveal
-    if (data.roles) {
-      PlayerList.renderResultRoles(data.roles);
+    // Roles reveal - server sends 'players' as object map, convert to array
+    var rolesData = data.roles || data.players;
+    if (rolesData) {
+      var rolesArray;
+      if (Array.isArray(rolesData)) {
+        rolesArray = rolesData;
+      } else {
+        // Convert { id: { name, role, alive } } to [{ id, name, role, ejected }]
+        rolesArray = Object.keys(rolesData).map(function (id) {
+          var p = rolesData[id];
+          return {
+            id: id,
+            name: p.name,
+            role: p.role,
+            ejected: !p.alive
+          };
+        });
+      }
+      PlayerList.renderResultRoles(rolesArray);
     }
 
-    // Stats
+    // Stats - server sends { playerId: taskCount }, compute aggregate stats
     var statsContainer = DOM.id('results-stats');
-    if (statsContainer && data.stats) {
+    if (statsContainer) {
       DOM.clear(statsContainer);
+
+      var computedStats = {};
+      if (data.stats) {
+        if (typeof data.stats === 'object' && !data.stats.tasksCompleted) {
+          // Server format: { playerId: count } - aggregate
+          var totalTasks = 0;
+          Object.keys(data.stats).forEach(function (pid) {
+            totalTasks += data.stats[pid] || 0;
+          });
+          computedStats.tasksCompleted = totalTasks;
+        } else {
+          computedStats = data.stats;
+        }
+      }
+
+      // Also add meters info
+      if (data.meters) {
+        computedStats.survivalFinal = Math.round(data.meters.survival || 0);
+        computedStats.bakariFinal = Math.round(data.meters.bakari || 0);
+      }
 
       var statsConfig = [
         { key: 'tasksCompleted', label: 'משימות הושלמו' },
-        { key: 'sabotagesDone', label: 'חבלות בוצעו' },
-        { key: 'roundsSurvived', label: 'סבבים' }
+        { key: 'survivalFinal', label: 'הישרדות סופי' },
+        { key: 'bakariFinal', label: 'בקרי סופי' }
       ];
 
       statsConfig.forEach(function (stat) {
-        var value = data.stats[stat.key];
+        var value = computedStats[stat.key];
         if (value === undefined) return;
 
         var statEl = DOM.create('div', 'results-stat');
-        var valEl = DOM.create('div', 'results-stat-value', String(value));
+        var displayVal = (stat.key === 'survivalFinal' || stat.key === 'bakariFinal')
+          ? value + '%' : String(value);
+        var valEl = DOM.create('div', 'results-stat-value', displayVal);
         var labelEl = DOM.create('div', 'results-stat-label', stat.label);
         statEl.appendChild(valEl);
         statEl.appendChild(labelEl);
@@ -105,11 +143,19 @@
       });
     }
 
-    // Play sound
+    // Play sound and effects
     if (winner === 'crew') {
       Audio.success();
+      // Show confetti animation for crew victory
+      if (window.App.showConfetti) {
+        window.App.showConfetti();
+      }
     } else {
       Audio.fail();
+      // Vibrate on saboteur victory
+      if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200, 100, 400]);
+      }
     }
 
     // Show/hide play again button based on host

@@ -49,14 +49,19 @@
       circle.style.left = positions[i].x + '%';
       circle.style.top  = positions[i].y + '%';
 
-      // Touch + click handler
+      // Touch + click handler (with guard to prevent double-fire on mobile)
       (function (num, el) {
-        var handler = function (e) {
+        var touchFired = false;
+        el.addEventListener('touchstart', function (e) {
           e.preventDefault();
+          touchFired = true;
           onCircleTap(num, el);
-        };
-        el.addEventListener('touchstart', handler, { passive: false });
-        el.addEventListener('click', handler);
+        }, { passive: false });
+        el.addEventListener('click', function (e) {
+          e.preventDefault();
+          if (touchFired) { touchFired = false; return; }
+          onCircleTap(num, el);
+        });
       })(i + 1, circle);
 
       area.appendChild(circle);
@@ -76,11 +81,11 @@
 
   function generatePositions(count) {
     var positions = [];
-    var attempts = 0;
 
     for (var i = 0; i < count; i++) {
       var placed = false;
-      while (!placed && attempts < 200) {
+      var attempts = 0;
+      while (!placed && attempts < 100) {
         var x = 10 + Math.random() * 70; // 10-80%
         var y = 10 + Math.random() * 70;
         var tooClose = false;

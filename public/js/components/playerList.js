@@ -14,13 +14,15 @@
 
   /**
    * Render player list in lobby.
-   * @param {Array} players - [{id, name, isHost}]
+   * @param {Array} players - [{id, name}]
    * @param {string} myId - current player socket id
    */
   PlayerList.render = function (players, myId) {
     var list = DOM.id('player-list');
     if (!list) return;
     DOM.clear(list);
+
+    var hostId = window.App.state.hostId;
 
     players.forEach(function (player) {
       var li = DOM.create('li', 'player-item');
@@ -38,12 +40,10 @@
       li.appendChild(avatar);
       li.appendChild(name);
 
-      if (player.isHost) {
-        var crown = document.createElement('img');
-        crown.src = '/assets/icon-crown-host.png';
-        crown.alt = 'מארח';
-        crown.className = 'player-item-host';
-        li.appendChild(crown);
+      // Check isHost from player data OR from global hostId state
+      if (player.isHost || player.id === hostId) {
+        var crownSpan = DOM.create('span', 'player-item-host-crown', '\uD83D\uDC51');
+        li.appendChild(crownSpan);
       }
 
       list.appendChild(li);

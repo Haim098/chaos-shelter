@@ -40,9 +40,18 @@
         if (response && response.ok) {
           window.App.state.myName = name;
           window.App.state.myId = response.playerId;
+          // Save name for reconnection
+          try { localStorage.setItem('chaos-shelter-name', name); } catch (e) {}
           DOM.hide('join-form');
           DOM.show('player-list-container');
-          Toast.success('הצטרפת למקלט!');
+          if (response.reconnected) {
+            Toast.success('התחברת מחדש!');
+            if (response.role) {
+              window.App.state.myRole = response.role;
+            }
+          } else {
+            Toast.success('הצטרפת למקלט!');
+          }
           Audio.success();
         } else {
           Toast.error((response && response.error) || 'שגיאה בהצטרפות');
@@ -78,11 +87,26 @@
     // Render the player list
     PlayerList.render(data.players || [], myId);
 
-    // Show/hide start button for host
+    // Show/hide start button for host with min player UX
     var isHost = data.hostId === myId;
     var startBtn = DOM.id('btn-start');
+    var playerCount = (data.players || []).length;
+    var MIN_PLAYERS = 3;
+
     if (startBtn) {
       DOM.toggleClass(startBtn, 'hidden', !isHost);
+      if (isHost) {
+        if (playerCount < MIN_PLAYERS) {
+          startBtn.classList.add('needs-players');
+          startBtn.disabled = true;
+          var needed = MIN_PLAYERS - playerCount;
+          startBtn.textContent = '\u05E6\u05E8\u05D9\u05DA \u05E2\u05D5\u05D3 ' + needed + ' \u05E9\u05D7\u05E7\u05E0\u05D9\u05DD';
+        } else {
+          startBtn.classList.remove('needs-players');
+          startBtn.disabled = false;
+          startBtn.textContent = '\u05D4\u05EA\u05D7\u05DC \u05DE\u05E9\u05D7\u05E7!';
+        }
+      }
     }
 
     // Show lobby if we haven't joined yet but lobby updated (reconnect)
