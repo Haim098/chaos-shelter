@@ -25,6 +25,12 @@
     wireConnect:  '/assets/icon-task-electrical-wire.png',
     tapToWake:    '/assets/icon-task-daniel-sleeping.png',
     chooseAnswer: '/assets/icon-task-argument-clash.png',
+    memoryMatch:    '/assets/icon-task-chaotic-toys.png',
+    simonSays:      '/assets/icon-task-electrical-wire.png',
+    catchItems:     '/assets/icon-task-chaotic-toys.png',
+    colorSort:      '/assets/icon-task-chaotic-toys.png',
+    balanceMeter:   '/assets/icon-task-electrical-wire.png',
+    mazeNavigate:   '/assets/icon-task-daniel-sleeping.png',
   };
 
   var LABELS = {
@@ -32,6 +38,12 @@
     wireConnect:  'חבר את החוטים',
     tapToWake:    'תעיר את דניאל!',
     chooseAnswer: 'מי צודק בוויכוח?',
+    memoryMatch:    'זכור וגלה',
+    simonSays:      'הקלד את הקוד',
+    catchItems:     'תפוס אספקה!',
+    colorSort:      'מיין פחיות',
+    balanceMeter:   'ייצב את הגנרטור',
+    mazeNavigate:   'מצא את הדרך',
   };
 
   // ── Register a mini-game type ────────────────────────────────
@@ -66,6 +78,25 @@
         break;
       case 'wireConnect':
         if (raw.wires !== undefined) data.params.wires = raw.wires;
+        break;
+      case 'memoryMatch':
+        if (raw.pairs !== undefined) data.params.pairs = raw.pairs;
+        break;
+      case 'simonSays':
+        if (raw.sequence !== undefined) data.params.sequence = raw.sequence;
+        break;
+      case 'catchItems':
+        if (raw.target !== undefined) data.params.target = raw.target;
+        break;
+      case 'colorSort':
+        if (raw.cans !== undefined) data.params.cans = raw.cans;
+        break;
+      case 'balanceMeter':
+        if (raw.holdTime !== undefined) data.params.holdTime = raw.holdTime;
+        if (raw.speed !== undefined) data.params.speed = raw.speed;
+        break;
+      case 'mazeNavigate':
+        if (raw.maze !== undefined) data.params.maze = raw.maze;
         break;
     }
 

@@ -42,6 +42,51 @@ function generateTask() {
       task.correct  = q.correct;
       break;
     }
+    case 'memoryMatch': {
+      task.pairs = template.pairs || 4;
+      break;
+    }
+    case 'simonSays': {
+      var seqLen = template.sequenceLength || 5;
+      var seq = [];
+      for (var i = 0; i < seqLen; i++) {
+        seq.push(Math.floor(Math.random() * 4));
+      }
+      task.sequence = seq;
+      break;
+    }
+    case 'catchItems': {
+      task.target = template.target || 8;
+      break;
+    }
+    case 'colorSort': {
+      task.cans = template.cans || 6;
+      break;
+    }
+    case 'balanceMeter': {
+      task.holdTime = template.holdTime || 3;
+      task.speed = template.speed || 2;
+      break;
+    }
+    case 'mazeNavigate': {
+      // Generate a simple 6x6 maze
+      var maze = [
+        [0,0,1,0,0,0],
+        [1,0,1,0,1,0],
+        [0,0,0,0,1,0],
+        [0,1,1,0,0,0],
+        [0,0,1,0,1,0],
+        [1,0,0,0,0,0]
+      ];
+      // Randomly pick from a few preset mazes for variety
+      var mazes = [
+        [[0,0,1,0,0,0],[1,0,1,0,1,0],[0,0,0,0,1,0],[0,1,1,0,0,0],[0,0,1,0,1,0],[1,0,0,0,0,0]],
+        [[0,0,0,1,0,0],[0,1,0,1,0,0],[0,1,0,0,0,1],[0,0,1,0,1,0],[1,0,1,0,0,0],[0,0,0,0,1,0]],
+        [[0,1,0,0,0,0],[0,0,0,1,1,0],[1,1,0,0,0,0],[0,0,0,1,0,1],[0,1,0,1,0,0],[0,0,0,0,0,0]]
+      ];
+      task.maze = mazes[Math.floor(Math.random() * mazes.length)];
+      break;
+    }
   }
 
   return task;

@@ -55,6 +55,12 @@ const TASK_TYPES = [
   { type: 'wireConnect',  label: 'חבר את החוטים',      duration: 10000, wires: 4 },
   { type: 'tapToWake',    label: 'תעיר את דניאל!',     duration: 5000,  taps: 15 },
   { type: 'chooseAnswer', label: 'מי צודק בוויכוח?',  duration: 8000,  options: 3 },
+  { type: 'memoryMatch',    label: 'זכור וגלה',              duration: 10000, pairs: 4 },
+  { type: 'simonSays',      label: 'הקלד את הקוד',           duration: 10000, sequenceLength: 5 },
+  { type: 'catchItems',     label: 'תפוס אספקה!',            duration: 8000,  target: 8 },
+  { type: 'colorSort',      label: 'מיין פחיות',              duration: 10000, cans: 6 },
+  { type: 'balanceMeter',   label: 'ייצב את הגנרטור',        duration: 7000,  holdTime: 3, speed: 2 },
+  { type: 'mazeNavigate',   label: 'מצא את הדרך',            duration: 10000 },
 ];
 
 // ── Question Bank for chooseAnswer ──────────────────────────────
