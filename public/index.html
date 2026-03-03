@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>כאוס במקלט: משמר הבקרי</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/lobby.css">
+  <link rel="stylesheet" href="/css/game.css">
+  <link rel="stylesheet" href="/css/voting.css">
+  <link rel="stylesheet" href="/css/results.css">
+  <link rel="stylesheet" href="/css/tasks.css">
+</head>
+<body>
+
+  <!-- ========== LOBBY SCREEN ========== -->
+  <div id="screen-lobby" class="screen active">
+    <div class="screen-bg" style="background-image: url('/assets/bg-shelter-lobby.png')"></div>
+    <div class="screen-content">
+      <h1 class="game-title">כאוס במקלט</h1>
+      <h2 class="game-subtitle">משמר הבקרי</h2>
+
+      <div id="join-form" class="join-form">
+        <input type="text" id="player-name-input" class="input-name" placeholder="הכנס שם..." maxlength="12" autocomplete="off">
+        <button id="btn-join" class="btn btn-primary">הצטרף למקלט</button>
+      </div>
+
+      <div id="player-list-container" class="player-list-container hidden">
+        <h3 class="section-title">שוהים במקלט</h3>
+        <ul id="player-list" class="player-list"></ul>
+        <div class="lobby-footer">
+          <span id="player-count" class="player-count">0 / 10</span>
+          <button id="btn-start" class="btn btn-start hidden">התחל משחק!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ROLE REVEAL SCREEN ========== -->
+  <div id="screen-roleReveal" class="screen">
+    <div class="screen-bg" id="role-reveal-bg"></div>
+    <div class="screen-content role-reveal-content">
+      <div class="role-card" id="role-card">
+        <div class="role-card-inner">
+          <div class="role-icon" id="role-icon">?</div>
+          <h2 class="role-title" id="role-title"></h2>
+          <p class="role-description" id="role-description"></p>
+        </div>
+      </div>
+      <p class="role-timer-text">המשחק מתחיל בעוד...</p>
+      <div class="role-timer" id="role-timer">5</div>
+    </div>
+  </div>
+
+  <!-- ========== CREW GAME SCREEN ========== -->
+  <div id="screen-crewGame" class="screen">
+    <div class="screen-bg" style="background-image: url('/assets/bg-control-panel-crew.png')"></div>
+    <div class="screen-content game-content">
+      <div class="meters-bar">
+        <div class="meter" id="meter-survival">
+          <img src="/assets/icon-meter-survival.png" alt="הישרדות" class="meter-icon">
+          <div class="meter-track">
+            <div class="meter-fill meter-fill-survival" id="meter-fill-survival"></div>
+          </div>
+          <span class="meter-label">הישרדות</span>
+        </div>
+        <div class="meter" id="meter-bakari">
+          <img src="/assets/icon-meter-bakari.png" alt="בקרי" class="meter-icon">
+          <div class="meter-track">
+            <div class="meter-fill meter-fill-bakari" id="meter-fill-bakari"></div>
+          </div>
+          <span class="meter-label">בקרי</span>
+        </div>
+      </div>
+
+      <div class="task-area" id="crew-task-area">
+        <div class="task-waiting">
+          <div class="task-waiting-icon">&#9881;</div>
+          <p>ממתין למשימה...</p>
+        </div>
+      </div>
+
+      <div class="game-bottom-bar">
+        <button id="btn-call-vote-crew" class="btn btn-vote">
+          <img src="/assets/icon-vote-button.png" alt="הצבע" class="btn-icon">
+          קרא להצבעה
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SABOTEUR GAME SCREEN ========== -->
+  <div id="screen-saboteurGame" class="screen">
+    <div class="screen-bg" style="background-image: url('/assets/bg-secret-bakari-stash.png')"></div>
+    <div class="screen-content game-content">
+      <div class="meters-bar">
+        <div class="meter">
+          <img src="/assets/icon-meter-survival.png" alt="הישרדות" class="meter-icon">
+          <div class="meter-track">
+            <div class="meter-fill meter-fill-survival" id="sab-meter-fill-survival"></div>
+          </div>
+          <span class="meter-label">הישרדות</span>
+        </div>
+        <div class="meter">
+          <img src="/assets/icon-meter-bakari.png" alt="בקרי" class="meter-icon">
+          <div class="meter-track">
+            <div class="meter-fill meter-fill-bakari" id="sab-meter-fill-bakari"></div>
+          </div>
+          <span class="meter-label">בקרי</span>
+        </div>
+      </div>
+
+      <div class="task-area" id="sab-task-area">
+        <div class="task-waiting">
+          <div class="task-waiting-icon">&#9881;</div>
+          <p>משימה מזויפת ממתינה...</p>
+        </div>
+      </div>
+
+      <div class="sabotage-buttons">
+        <button class="btn btn-sabotage" data-sabotage="lights">
+          <img src="/assets/btn-sabotage-action.png" alt="חבלה" class="sabotage-icon">
+          <span>כיבוי אורות</span>
+        </button>
+        <button class="btn btn-sabotage" data-sabotage="alarm">
+          <img src="/assets/btn-sabotage-action.png" alt="חבלה" class="sabotage-icon">
+          <span>אזעקת שווא</span>
+        </button>
+        <button class="btn btn-sabotage" data-sabotage="steal">
+          <img src="/assets/btn-sabotage-action.png" alt="חבלה" class="sabotage-icon">
+          <span>גניבת בקרי</span>
+        </button>
+      </div>
+
+      <div class="game-bottom-bar">
+        <button id="btn-call-vote-sab" class="btn btn-vote">
+          <img src="/assets/icon-vote-button.png" alt="הצבע" class="btn-icon">
+          קרא להצבעה
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== TASK OVERLAY ========== -->
+  <div id="screen-taskOverlay" class="overlay">
+    <div class="overlay-content">
+      <div class="task-header">
+        <h3 class="task-title" id="task-title"></h3>
+        <div class="task-timer" id="task-timer"></div>
+      </div>
+      <div class="task-body" id="task-body"></div>
+    </div>
+  </div>
+
+  <!-- ========== VOTING SCREEN ========== -->
+  <div id="screen-voting" class="screen">
+    <div class="screen-bg" style="background-image: url('/assets/bg-voting.png')"></div>
+    <div class="screen-content voting-content">
+      <h2 class="voting-title">הצבעה!</h2>
+      <p class="voting-subtitle">מי המחבל?</p>
+      <div class="vote-timer-container">
+        <div class="vote-timer" id="vote-timer">30</div>
+      </div>
+      <div class="vote-cards" id="vote-cards"></div>
+      <button id="btn-skip-vote" class="btn btn-skip">דלג על הצבעה</button>
+    </div>
+  </div>
+
+  <!-- ========== RESULTS SCREEN ========== -->
+  <div id="screen-results" class="screen">
+    <div class="screen-bg" id="results-bg"></div>
+    <div class="screen-content results-content">
+      <h2 class="results-title" id="results-title"></h2>
+      <p class="results-subtitle" id="results-subtitle"></p>
+      <div class="results-roles" id="results-roles"></div>
+      <div class="results-stats" id="results-stats"></div>
+      <button id="btn-play-again" class="btn btn-primary">שחק שוב!</button>
+    </div>
+  </div>
+
+  <!-- ========== TOAST CONTAINER ========== -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- ========== SABOTAGE EFFECTS OVERLAY ========== -->
+  <div id="sabotage-overlay" class="sabotage-overlay hidden">
+    <div id="sabotage-effect" class="sabotage-effect"></div>
+  </div>
+
+  <!-- ========== SCRIPTS ========== -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- Utilities -->
+  <script src="/js/utils/dom.js"></script>
+  <script src="/js/utils/audio.js"></script>
+  <script src="/js/utils/socket.js"></script>
+
+  <!-- Components -->
+  <script src="/js/components/meters.js"></script>
+  <script src="/js/components/playerList.js"></script>
+  <script src="/js/components/timer.js"></script>
+  <script src="/js/components/toast.js"></script>
+
+  <!-- Screens -->
+  <script src="/js/screens/lobby.js"></script>
+  <script src="/js/screens/roleReveal.js"></script>
+  <script src="/js/screens/crewGame.js"></script>
+  <script src="/js/screens/saboteurGame.js"></script>
+  <script src="/js/screens/voting.js"></script>
+  <script src="/js/screens/results.js"></script>
+
+  <!-- Tasks -->
+  <script src="/js/tasks/taskRunner.js"></script>
+  <script src="/js/tasks/tapCircles.js"></script>
+  <script src="/js/tasks/wireConnect.js"></script>
+  <script src="/js/tasks/tapToWake.js"></script>
+  <script src="/js/tasks/chooseAnswer.js"></script>
+
+  <!-- Main App -->
+  <script src="/js/app.js"></script>
+</body>
+</html>

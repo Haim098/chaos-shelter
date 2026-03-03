@@ -1,0 +1,102 @@
+/* ===== LOBBY SCREEN ===== */
+#screen-lobby .screen-content {
+  justify-content: center;
+  gap: 24px;
+}
+
+.game-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--color-text-bright);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6), 0 0 40px rgba(76, 175, 80, 0.3);
+  animation: slideDown 0.6s ease;
+}
+
+.game-subtitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-bakari-light);
+  margin-top: -12px;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  animation: slideDown 0.6s ease 0.15s both;
+}
+
+/* Join Form */
+.join-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  animation: slideUp 0.5s ease 0.3s both;
+}
+
+/* Player List Container */
+.player-list-container {
+  width: 100%;
+  max-width: 340px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-md);
+  animation: slideUp 0.4s ease;
+}
+
+/* Player List */
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.player-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--color-surface-light);
+  border-radius: var(--radius-md);
+  animation: slideUp 0.3s ease;
+}
+
+.player-item-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.player-item-name {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.player-item-host {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.player-item.is-me {
+  border: 2px solid var(--color-primary);
+}
+
+/* Lobby Footer */
+.lobby-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-bg-light);
+}
+
+.player-count {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}

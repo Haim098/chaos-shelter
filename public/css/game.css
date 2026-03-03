@@ -1,0 +1,267 @@
+/* ===== GAME SCREENS (Crew + Saboteur) ===== */
+.game-content {
+  justify-content: space-between;
+  padding-top: 12px;
+  padding-bottom: 16px;
+}
+
+/* ===== METERS BAR ===== */
+.meters-bar {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.meter {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.meter-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.meter-track {
+  width: 100%;
+  height: 14px;
+  background: var(--color-bg-dark);
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid var(--color-bg-light);
+}
+
+.meter-fill {
+  height: 100%;
+  border-radius: 7px;
+  transition: width 0.6s ease;
+  position: relative;
+}
+
+.meter-fill-survival {
+  background: linear-gradient(90deg, var(--color-danger), var(--color-primary));
+  width: 100%;
+}
+
+.meter-fill-bakari {
+  background: linear-gradient(90deg, var(--color-bakari), var(--color-bakari-light));
+  width: 0%;
+}
+
+.meter-fill.danger {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.meter-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+/* ===== TASK AREA ===== */
+.task-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 12px 0;
+}
+
+.task-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-text-muted);
+}
+
+.task-waiting-icon {
+  font-size: 2.5rem;
+  animation: spin 3s linear infinite;
+}
+
+.task-waiting p {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.task-card {
+  width: 100%;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  animation: scaleIn 0.4s ease;
+}
+
+.task-card-icon {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  margin-bottom: 12px;
+}
+
+.task-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-bright);
+  margin-bottom: 8px;
+}
+
+.task-card-desc {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-bottom: 16px;
+}
+
+.task-card-action {
+  display: flex;
+  justify-content: center;
+}
+
+/* ===== GAME BOTTOM BAR ===== */
+.game-bottom-bar {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+/* ===== SABOTAGE BUTTONS ===== */
+.sabotage-buttons {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.sabotage-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  margin-bottom: 4px;
+}
+
+.btn-sabotage span {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.btn-sabotage.on-cooldown {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ===== TASK OVERLAY ===== */
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.task-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-bright);
+}
+
+.task-timer {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-warning);
+  min-width: 40px;
+  text-align: center;
+}
+
+.task-timer.urgent {
+  color: var(--color-danger);
+  animation: pulse 0.6s ease-in-out infinite;
+}
+
+.task-body {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+/* ===== ROLE REVEAL ===== */
+.role-reveal-content {
+  justify-content: center;
+  gap: 24px;
+}
+
+.role-card {
+  width: 260px;
+  height: 340px;
+  perspective: 1000px;
+  animation: scaleIn 0.6s ease;
+}
+
+.role-card-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.role-card.crew .role-card-inner {
+  background: linear-gradient(135deg, #1b5e20, #2e7d32, #1b5e20);
+  border: 3px solid var(--color-primary-light);
+}
+
+.role-card.saboteur .role-card-inner {
+  background: linear-gradient(135deg, #b71c1c, #d32f2f, #b71c1c);
+  border: 3px solid var(--color-danger-light);
+}
+
+.role-icon {
+  font-size: 4rem;
+  line-height: 1;
+}
+
+.role-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--color-text-bright);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.role-description {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.role-timer-text {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.role-timer {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--color-text-bright);
+  animation: countDown 1s ease infinite;
+}
